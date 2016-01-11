@@ -17,27 +17,29 @@ class Card extends Sprite
 	
 	
 	public var cardNumber:Int;
-	public var frontImage:Bitmap;
+	public var image:Bitmap;
 	
 	
-	public function new(number:Int,image:String)
+	public function new(number:Int)
 	{
 		super(); 
 		cardNumber = number;
-		frontImage = new Bitmap(Assets.getBitmapData(image));
-		addChild(frontImage);
-		frontImage.width = 100;
-		frontImage.height = 170;		
 		
+		//Setup frontImage
+		image = new Bitmap(Assets.getBitmapData("img/CardBack.jpg"));
+		trace("gelukt");		
+		addChild(image);
+		image.width = 100;
+		image.height = 170;		
 	}
 	
 	public function changeToBack() 
 	{
-		frontImage.bitmapData = Assets.getBitmapData("img/CardBack.jpg");
+		image.bitmapData = Assets.getBitmapData("img/CardBack.jpg");
 	}
 	
 	public function changeToFront() 
 	{
-		frontImage.bitmapData = Assets.getBitmapData("img/Card_" + (cardNumber % 10 + 1) + ".jpg");
+		image.bitmapData = Assets.getBitmapData("img/Card_" + (cardNumber % 10 + 1) + ".jpg");
 	}
 }

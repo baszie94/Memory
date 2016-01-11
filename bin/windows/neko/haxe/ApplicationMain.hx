@@ -77,6 +77,7 @@ class ApplicationMain {
 		
 		
 		
+		
 		if (total == 0) {
 			
 			start ();
@@ -90,7 +91,7 @@ class ApplicationMain {
 		
 		config = {
 			
-			build: "401",
+			build: "430",
 			company: "Bas Benjamins",
 			file: "Memorycardgame3",
 			fps: 60,

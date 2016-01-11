@@ -10,8 +10,10 @@ import lime.audio.AudioSource;
 import lime.audio.openal.AL;
 import lime.audio.AudioBuffer;
 import lime.graphics.Image;
+import lime.net.HTTPRequest;
+import lime.system.CFFI;
 import lime.text.Font;
-import lime.utils.ByteArray;
+import lime.utils.Bytes;
 import lime.utils.UInt8Array;
 import lime.Assets;
 
@@ -19,10 +21,7 @@ import lime.Assets;
 import sys.FileSystem;
 #end
 
-#if (js && html5)
-import lime.net.URLLoader;
-import lime.net.URLRequest;
-#elseif flash
+#if flash
 import flash.display.Bitmap;
 import flash.display.BitmapData;
 import flash.display.Loader;
@@ -259,6 +258,10 @@ class DefaultAssetLibrary extends AssetLibrary {
 				
 				return true;
 				
+			} else if (requestedType == TEXT && assetType == BINARY) {
+				
+				return true;
+				
 			} else if (requestedType == null || path.exists (id)) {
 				
 				return true;
@@ -297,7 +300,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#else
 		
-		if (className.exists(id)) return AudioBuffer.fromBytes (cast (Type.createInstance (className.get (id), []), ByteArray));
+		if (className.exists(id)) return AudioBuffer.fromBytes (cast (Type.createInstance (className.get (id), []), Bytes));
 		else return AudioBuffer.fromFile (path.get (id));
 		
 		#end
@@ -305,7 +308,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 	}
 	
 	
-	public override function getBytes (id:String):ByteArray {
+	public override function getBytes (id:String):Bytes {
 		
 		#if flash
 		
@@ -313,12 +316,12 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 			case TEXT, BINARY:
 				
-				return cast (Type.createInstance (className.get (id), []), ByteArray);
+				return Bytes.ofData (cast (Type.createInstance (className.get (id), []), flash.utils.ByteArray));
 			
 			case IMAGE:
 				
 				var bitmapData = cast (Type.createInstance (className.get (id), []), BitmapData);
-				return bitmapData.getPixels (bitmapData.rect);
+				return Bytes.ofData (bitmapData.getPixels (bitmapData.rect));
 			
 			default:
 				
@@ -326,11 +329,10 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		}
 		
-		return cast (Type.createInstance (className.get (id), []), ByteArray);
+		return cast (Type.createInstance (className.get (id), []), Bytes);
 		
 		#elseif html5
 		
-		var bytes:ByteArray = null;
 		var loader = Preloader.loaders.get (path.get (id));
 		
 		if (loader == null) {
@@ -339,26 +341,10 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		}
 		
-		var data = loader.data;
-		
-		if (Std.is (data, String)) {
-			
-			bytes = new ByteArray ();
-			bytes.writeUTFBytes (data);
-			
-		} else if (Std.is (data, ByteArray)) {
-			
-			bytes = cast data;
-			
-		} else {
-			
-			bytes = null;
-			
-		}
+		var bytes = loader.bytes;
 		
 		if (bytes != null) {
 			
-			bytes.position = 0;
 			return bytes;
 			
 		} else {
@@ -368,8 +354,8 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#else
 		
-		if (className.exists(id)) return cast (Type.createInstance (className.get (id), []), ByteArray);
-		else return ByteArray.readFile (path.get (id));
+		if (className.exists(id)) return cast (Type.createInstance (className.get (id), []), Bytes);
+		else return Bytes.readFile (path.get (id));
 		
 		#end
 		
@@ -485,7 +471,6 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#if html5
 		
-		var bytes:ByteArray = null;
 		var loader = Preloader.loaders.get (path.get (id));
 		
 		if (loader == null) {
@@ -494,26 +479,11 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		}
 		
-		var data = loader.data;
-		
-		if (Std.is (data, String)) {
-			
-			return cast data;
-			
-		} else if (Std.is (data, ByteArray)) {
-			
-			bytes = cast data;
-			
-		} else {
-			
-			bytes = null;
-			
-		}
+		var bytes = loader.bytes;
 		
 		if (bytes != null) {
 			
-			bytes.position = 0;
-			return bytes.readUTFBytes (bytes.length);
+			return bytes.getString (0, bytes.length);
 			
 		} else {
 			
@@ -530,7 +500,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		} else {
 			
-			return bytes.readUTFBytes (bytes.length);
+			return bytes.getString (0, bytes.length);
 			
 		}
 		
@@ -627,9 +597,9 @@ class DefaultAssetLibrary extends AssetLibrary {
 	}
 	
 	
-	public override function loadBytes (id:String):Future<ByteArray> {
+	public override function loadBytes (id:String):Future<Bytes> {
 		
-		var promise = new Promise<ByteArray> ();
+		var promise = new Promise<Bytes> ();
 		
 		#if flash
 		
@@ -638,10 +608,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 			var loader = new URLLoader ();
 			loader.addEventListener (Event.COMPLETE, function (event:Event) {
 				
-				var bytes = new ByteArray ();
-				bytes.writeUTFBytes (event.currentTarget.data);
-				bytes.position = 0;
-				
+				var bytes = Bytes.ofString (event.currentTarget.data);
 				promise.complete (bytes);
 				
 			});
@@ -671,32 +638,8 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		if (path.exists (id)) {
 			
-			var loader = new URLLoader ();
-			loader.dataFormat = BINARY;
-			loader.onComplete.add (function (_):Void {
-				
-				promise.complete (loader.data);
-				
-			});
-			loader.onProgress.add (function (_, loaded, total) {
-				
-				if (total == 0) {
-					
-					promise.progress (0);
-					
-				} else {
-					
-					promise.progress (loaded / total);
-					
-				}
-				
-			});
-			loader.onIOError.add (function (_, e) {
-				
-				promise.error (e);
-				
-			});
-			loader.load (new URLRequest (path.get (id)));
+			var request = new HTTPRequest ();
+			promise.completeWith (request.load (path.get (id) + "?" + Assets.cache.version));
 			
 		} else {
 			
@@ -706,7 +649,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#else
 		
-		promise.completeWith (new Future<ByteArray> (function () return getBytes (id)));
+		promise.completeWith (new Future<Bytes> (function () return getBytes (id)));
 		
 		#end
 		
@@ -763,7 +706,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 				
 			}
 			image.onerror = promise.error;
-			image.src = path.get (id);
+			image.src = path.get (id) + "?" + Assets.cache.version;
 			
 		} else {
 			
@@ -788,26 +731,24 @@ class DefaultAssetLibrary extends AssetLibrary {
 		try {
 			
 			#if blackberry
-			var bytes = ByteArray.readFile ("app/native/manifest");
+			var bytes = Bytes.readFile ("app/native/manifest");
 			#elseif tizen
-			var bytes = ByteArray.readFile ("../res/manifest");
+			var bytes = Bytes.readFile ("../res/manifest");
 			#elseif emscripten
-			var bytes = ByteArray.readFile ("assets/manifest");
+			var bytes = Bytes.readFile ("assets/manifest");
 			#elseif (mac && java)
-			var bytes = ByteArray.readFile ("../Resources/manifest");
+			var bytes = Bytes.readFile ("../Resources/manifest");
 			#elseif (ios || tvos)
-			var bytes = ByteArray.readFile ("assets/manifest");
+			var bytes = Bytes.readFile ("assets/manifest");
 			#else
-			var bytes = ByteArray.readFile ("manifest");
+			var bytes = Bytes.readFile ("manifest");
 			#end
 			
 			if (bytes != null) {
 				
-				bytes.position = 0;
-				
 				if (bytes.length > 0) {
 					
-					var data = bytes.readUTFBytes (bytes.length);
+					var data = bytes.getString (0, bytes.length);
 					
 					if (data != null && data.length > 0) {
 						
@@ -856,27 +797,11 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		if (path.exists (id)) {
 			
-			var loader = new URLLoader ();
-			loader.onComplete.add (function (_):Void {
-				
-				promise.complete (loader.data);
-				
-			});
-			loader.onProgress.add (function (_, loaded, total) {
-				
-				if (total == 0) {
-					
-					promise.progress (0);
-					
-				} else {
-					
-					promise.progress (loaded / total);
-					
-				}
-				
-			});
-			loader.onIOError.add (function (_, msg) promise.error (msg));
-			loader.load (new URLRequest (path.get (id)));
+			var request = new HTTPRequest ();
+			var future = request.load (path.get (id) + "?" + Assets.cache.version);
+			future.onProgress (function (progress) promise.progress (progress));
+			future.onError (function (msg) promise.error (msg));
+			future.onComplete (function (bytes) promise.complete (bytes.getString (0, bytes.length)));
 			
 		} else {
 			
@@ -896,7 +821,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 					
 				} else {
 					
-					return bytes.readUTFBytes (bytes.length);
+					return bytes.getString (0, bytes.length);
 					
 				}
 				
