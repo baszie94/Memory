@@ -27,7 +27,7 @@ class Card extends Sprite
 		
 		//Setup frontImage
 		image = new Bitmap(Assets.getBitmapData("img/CardBack.jpg"));
-		trace("gelukt");		
+				
 		addChild(image);
 		image.width = 100;
 		image.height = 170;		

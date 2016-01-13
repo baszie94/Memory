@@ -10,10 +10,8 @@ import lime.audio.AudioSource;
 import lime.audio.openal.AL;
 import lime.audio.AudioBuffer;
 import lime.graphics.Image;
-import lime.net.HTTPRequest;
-import lime.system.CFFI;
 import lime.text.Font;
-import lime.utils.Bytes;
+import lime.utils.ByteArray;
 import lime.utils.UInt8Array;
 import lime.Assets;
 
@@ -21,7 +19,10 @@ import lime.Assets;
 import sys.FileSystem;
 #end
 
-#if flash
+#if (js && html5)
+import lime.net.URLLoader;
+import lime.net.URLRequest;
+#elseif flash
 import flash.display.Bitmap;
 import flash.display.BitmapData;
 import flash.display.Loader;
@@ -64,10 +65,14 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		
 		
+		openfl.text.Font.registerFont (__ASSET__OPENFL__fonts_morpheus_ttf);
+		
 		#end
 		
 		#if flash
 		
+		path.set ("img/BackGround.jpg", "img/BackGround.jpg");
+		type.set ("img/BackGround.jpg", AssetType.IMAGE);
 		path.set ("img/CardBack.jpg", "img/CardBack.jpg");
 		type.set ("img/CardBack.jpg", AssetType.IMAGE);
 		path.set ("img/Card_1.jpg", "img/Card_1.jpg");
@@ -92,11 +97,16 @@ class DefaultAssetLibrary extends AssetLibrary {
 		type.set ("img/Card_9.jpg", AssetType.IMAGE);
 		path.set ("img/StartButton.jpg", "img/StartButton.jpg");
 		type.set ("img/StartButton.jpg", AssetType.IMAGE);
+		path.set ("fonts/MORPHEUS.TTF", "fonts/MORPHEUS.TTF");
+		type.set ("fonts/MORPHEUS.TTF", AssetType.FONT);
 		
 		
 		#elseif html5
 		
 		var id;
+		id = "img/BackGround.jpg";
+		path.set (id, id);
+		type.set (id, AssetType.IMAGE);
 		id = "img/CardBack.jpg";
 		path.set (id, id);
 		type.set (id, AssetType.IMAGE);
@@ -133,6 +143,9 @@ class DefaultAssetLibrary extends AssetLibrary {
 		id = "img/StartButton.jpg";
 		path.set (id, id);
 		type.set (id, AssetType.IMAGE);
+		id = "fonts/MORPHEUS.TTF";
+		path.set (id, id);
+		type.set (id, AssetType.FONT);
 		
 		
 		var assetsPrefix = null;
@@ -162,6 +175,10 @@ class DefaultAssetLibrary extends AssetLibrary {
 		useManifest = true;
 		useManifest = true;
 		useManifest = true;
+		useManifest = true;
+		
+		className.set ("fonts/MORPHEUS.TTF", __ASSET__fonts_morpheus_ttf);
+		type.set ("fonts/MORPHEUS.TTF", AssetType.FONT);
 		
 		
 		if (useManifest) {
@@ -222,10 +239,6 @@ class DefaultAssetLibrary extends AssetLibrary {
 				
 				return true;
 				
-			} else if (requestedType == TEXT && assetType == BINARY) {
-				
-				return true;
-				
 			} else if (requestedType == null || path.exists (id)) {
 				
 				return true;
@@ -264,7 +277,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#else
 		
-		if (className.exists(id)) return AudioBuffer.fromBytes (cast (Type.createInstance (className.get (id), []), Bytes));
+		if (className.exists(id)) return AudioBuffer.fromBytes (cast (Type.createInstance (className.get (id), []), ByteArray));
 		else return AudioBuffer.fromFile (path.get (id));
 		
 		#end
@@ -272,7 +285,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 	}
 	
 	
-	public override function getBytes (id:String):Bytes {
+	public override function getBytes (id:String):ByteArray {
 		
 		#if flash
 		
@@ -280,12 +293,12 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 			case TEXT, BINARY:
 				
-				return Bytes.ofData (cast (Type.createInstance (className.get (id), []), flash.utils.ByteArray));
+				return cast (Type.createInstance (className.get (id), []), ByteArray);
 			
 			case IMAGE:
 				
 				var bitmapData = cast (Type.createInstance (className.get (id), []), BitmapData);
-				return Bytes.ofData (bitmapData.getPixels (bitmapData.rect));
+				return bitmapData.getPixels (bitmapData.rect);
 			
 			default:
 				
@@ -293,10 +306,11 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		}
 		
-		return cast (Type.createInstance (className.get (id), []), Bytes);
+		return cast (Type.createInstance (className.get (id), []), ByteArray);
 		
 		#elseif html5
 		
+		var bytes:ByteArray = null;
 		var loader = Preloader.loaders.get (path.get (id));
 		
 		if (loader == null) {
@@ -305,10 +319,26 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		}
 		
-		var bytes = loader.bytes;
+		var data = loader.data;
+		
+		if (Std.is (data, String)) {
+			
+			bytes = new ByteArray ();
+			bytes.writeUTFBytes (data);
+			
+		} else if (Std.is (data, ByteArray)) {
+			
+			bytes = cast data;
+			
+		} else {
+			
+			bytes = null;
+			
+		}
 		
 		if (bytes != null) {
 			
+			bytes.position = 0;
 			return bytes;
 			
 		} else {
@@ -318,8 +348,8 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#else
 		
-		if (className.exists(id)) return cast (Type.createInstance (className.get (id), []), Bytes);
-		else return Bytes.readFile (path.get (id));
+		if (className.exists(id)) return cast (Type.createInstance (className.get (id), []), ByteArray);
+		else return ByteArray.readFile (path.get (id));
 		
 		#end
 		
@@ -435,6 +465,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#if html5
 		
+		var bytes:ByteArray = null;
 		var loader = Preloader.loaders.get (path.get (id));
 		
 		if (loader == null) {
@@ -443,11 +474,26 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		}
 		
-		var bytes = loader.bytes;
+		var data = loader.data;
+		
+		if (Std.is (data, String)) {
+			
+			return cast data;
+			
+		} else if (Std.is (data, ByteArray)) {
+			
+			bytes = cast data;
+			
+		} else {
+			
+			bytes = null;
+			
+		}
 		
 		if (bytes != null) {
 			
-			return bytes.getString (0, bytes.length);
+			bytes.position = 0;
+			return bytes.readUTFBytes (bytes.length);
 			
 		} else {
 			
@@ -464,7 +510,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 			
 		} else {
 			
-			return bytes.getString (0, bytes.length);
+			return bytes.readUTFBytes (bytes.length);
 			
 		}
 		
@@ -561,9 +607,9 @@ class DefaultAssetLibrary extends AssetLibrary {
 	}
 	
 	
-	public override function loadBytes (id:String):Future<Bytes> {
+	public override function loadBytes (id:String):Future<ByteArray> {
 		
-		var promise = new Promise<Bytes> ();
+		var promise = new Promise<ByteArray> ();
 		
 		#if flash
 		
@@ -572,7 +618,10 @@ class DefaultAssetLibrary extends AssetLibrary {
 			var loader = new URLLoader ();
 			loader.addEventListener (Event.COMPLETE, function (event:Event) {
 				
-				var bytes = Bytes.ofString (event.currentTarget.data);
+				var bytes = new ByteArray ();
+				bytes.writeUTFBytes (event.currentTarget.data);
+				bytes.position = 0;
+				
 				promise.complete (bytes);
 				
 			});
@@ -602,8 +651,32 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		if (path.exists (id)) {
 			
-			var request = new HTTPRequest ();
-			promise.completeWith (request.load (path.get (id) + "?" + Assets.cache.version));
+			var loader = new URLLoader ();
+			loader.dataFormat = BINARY;
+			loader.onComplete.add (function (_):Void {
+				
+				promise.complete (loader.data);
+				
+			});
+			loader.onProgress.add (function (_, loaded, total) {
+				
+				if (total == 0) {
+					
+					promise.progress (0);
+					
+				} else {
+					
+					promise.progress (loaded / total);
+					
+				}
+				
+			});
+			loader.onIOError.add (function (_, e) {
+				
+				promise.error (e);
+				
+			});
+			loader.load (new URLRequest (path.get (id)));
 			
 		} else {
 			
@@ -613,7 +686,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		#else
 		
-		promise.completeWith (new Future<Bytes> (function () return getBytes (id)));
+		promise.completeWith (new Future<ByteArray> (function () return getBytes (id)));
 		
 		#end
 		
@@ -670,7 +743,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 				
 			}
 			image.onerror = promise.error;
-			image.src = path.get (id) + "?" + Assets.cache.version;
+			image.src = path.get (id);
 			
 		} else {
 			
@@ -695,24 +768,26 @@ class DefaultAssetLibrary extends AssetLibrary {
 		try {
 			
 			#if blackberry
-			var bytes = Bytes.readFile ("app/native/manifest");
+			var bytes = ByteArray.readFile ("app/native/manifest");
 			#elseif tizen
-			var bytes = Bytes.readFile ("../res/manifest");
+			var bytes = ByteArray.readFile ("../res/manifest");
 			#elseif emscripten
-			var bytes = Bytes.readFile ("assets/manifest");
+			var bytes = ByteArray.readFile ("assets/manifest");
 			#elseif (mac && java)
-			var bytes = Bytes.readFile ("../Resources/manifest");
+			var bytes = ByteArray.readFile ("../Resources/manifest");
 			#elseif (ios || tvos)
-			var bytes = Bytes.readFile ("assets/manifest");
+			var bytes = ByteArray.readFile ("assets/manifest");
 			#else
-			var bytes = Bytes.readFile ("manifest");
+			var bytes = ByteArray.readFile ("manifest");
 			#end
 			
 			if (bytes != null) {
 				
+				bytes.position = 0;
+				
 				if (bytes.length > 0) {
 					
-					var data = bytes.getString (0, bytes.length);
+					var data = bytes.readUTFBytes (bytes.length);
 					
 					if (data != null && data.length > 0) {
 						
@@ -761,11 +836,27 @@ class DefaultAssetLibrary extends AssetLibrary {
 		
 		if (path.exists (id)) {
 			
-			var request = new HTTPRequest ();
-			var future = request.load (path.get (id) + "?" + Assets.cache.version);
-			future.onProgress (function (progress) promise.progress (progress));
-			future.onError (function (msg) promise.error (msg));
-			future.onComplete (function (bytes) promise.complete (bytes.getString (0, bytes.length)));
+			var loader = new URLLoader ();
+			loader.onComplete.add (function (_):Void {
+				
+				promise.complete (loader.data);
+				
+			});
+			loader.onProgress.add (function (_, loaded, total) {
+				
+				if (total == 0) {
+					
+					promise.progress (0);
+					
+				} else {
+					
+					promise.progress (loaded / total);
+					
+				}
+				
+			});
+			loader.onIOError.add (function (_, msg) promise.error (msg));
+			loader.load (new URLRequest (path.get (id)));
 			
 		} else {
 			
@@ -785,7 +876,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 					
 				} else {
 					
-					return bytes.getString (0, bytes.length);
+					return bytes.readUTFBytes (bytes.length);
 					
 				}
 				
@@ -820,6 +911,8 @@ class DefaultAssetLibrary extends AssetLibrary {
 
 
 
+
+
 #elseif html5
 
 
@@ -835,9 +928,12 @@ class DefaultAssetLibrary extends AssetLibrary {
 
 
 
+@:keep #if display private #end class __ASSET__fonts_morpheus_ttf extends lime.text.Font { public function new () { super (); name = "Morpheus"; } } 
+
 
 #else
 
+@:keep #if display private #end class __ASSET__fonts_morpheus_ttf extends lime.text.Font { public function new () { __fontPath = #if (ios || tvos) "assets/" + #end "fonts/MORPHEUS.TTF"; name = "Morpheus"; super (); }}
 
 
 #if (windows || mac || linux || cpp)
@@ -850,6 +946,7 @@ class DefaultAssetLibrary extends AssetLibrary {
 #end
 
 #if (openfl && !flash)
+@:keep #if display private #end class __ASSET__OPENFL__fonts_morpheus_ttf extends openfl.text.Font { public function new () { __fontPath = #if (ios || tvos) "assets/" + #end "fonts/MORPHEUS.TTF"; name = "Morpheus"; super (); }}
 
 #end
 

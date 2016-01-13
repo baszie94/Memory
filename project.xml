@@ -8,8 +8,9 @@
 	<!-- output -->
 	<app main="Main" file="Memorycardgame3" path="bin" />
 	
-	<window background="#123456" fps="60" />
-	<window width="1800" height="900" unless="mobile" />
+	<window background="#300000" fps="60" />
+	<!--<window width="1800" height="900" unless="mobile" />-->
+	<window fullscreen="true" />
 	<window orientation="landscape" vsync="false" antialiasing="0" if="cpp" />
 	
 	<!-- classpath, haxe libs -->
@@ -20,6 +21,8 @@
 	<!-- assets -->
 	<icon path="assets/openfl.svg" />
 	<assets path="assets/img" rename="img" />
+	<assets path="assets/fonts" rename="fonts" />
+
 	
 	<!-- optimize output
 	<haxeflag name="-dce full" /> -->

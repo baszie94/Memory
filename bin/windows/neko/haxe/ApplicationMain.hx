@@ -77,7 +77,6 @@ class ApplicationMain {
 		
 		
 		
-		
 		if (total == 0) {
 			
 			start ();
@@ -91,7 +90,7 @@ class ApplicationMain {
 		
 		config = {
 			
-			build: "430",
+			build: "583",
 			company: "Bas Benjamins",
 			file: "Memorycardgame3",
 			fps: 60,
@@ -103,19 +102,19 @@ class ApplicationMain {
 				
 				{
 					antialiasing: 0,
-					background: 1193046,
+					background: 3145728,
 					borderless: false,
 					depthBuffer: false,
 					display: 0,
-					fullscreen: false,
+					fullscreen: true,
 					hardware: true,
-					height: 900,
+					height: 600,
 					parameters: "{}",
 					resizable: true,
 					stencilBuffer: true,
 					title: "Memory card game 3",
 					vsync: false,
-					width: 1800,
+					width: 800,
 					x: null,
 					y: null
 				},
@@ -133,7 +132,7 @@ class ApplicationMain {
 		
 		#if (js && html5)
 		#if (munit || utest)
-		openfl.Lib.embed (null, 1800, 900, "null");
+		openfl.Lib.embed (null, 800, 600, "null");
 		#end
 		#else
 		create ();

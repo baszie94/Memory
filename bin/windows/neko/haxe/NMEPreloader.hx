@@ -56,14 +56,14 @@ class NMEPreloader extends Sprite {
 	
 	public function getBackgroundColor ():Int {
 		
-		return 1193046;
+		return 3145728;
 		
 	}
 	
 	
 	public function getHeight ():Float {
 		
-		var height = 900;
+		var height = 600;
 		
 		if (height > 0) {
 			
@@ -80,7 +80,7 @@ class NMEPreloader extends Sprite {
 	
 	public function getWidth ():Float {
 		
-		var width = 1800;
+		var width = 800;
 		
 		if (width > 0) {
 			

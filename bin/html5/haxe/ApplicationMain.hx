@@ -125,7 +125,6 @@ class ApplicationMain {
 		
 		
 		
-		
 		if (total == 0) {
 			
 			start ();
@@ -139,7 +138,7 @@ class ApplicationMain {
 		
 		config = {
 			
-			build: "402",
+			build: "431",
 			company: "Bas Benjamins",
 			file: "Memorycardgame3",
 			fps: 60,
@@ -156,7 +155,7 @@ class ApplicationMain {
 					depthBuffer: false,
 					display: 0,
 					fullscreen: false,
-					hardware: false,
+					hardware: true,
 					height: 900,
 					parameters: "{}",
 					resizable: true,

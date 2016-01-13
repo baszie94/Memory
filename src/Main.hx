@@ -15,6 +15,11 @@ import openfl.events.MouseEvent;
 import openfl.text.TextField;
 import openfl.ui.Mouse;
 import openfl.Lib;
+import openfl.text.TextFormat;
+import openfl.text.TextFormatAlign;
+import openfl.text.TextFieldAutoSize;
+
+
 
 
 
@@ -26,18 +31,25 @@ class Main extends Sprite
 	var player1: Player = new Player("Player1", 1500, 10);	// Create Player 1
 	var player2: Player = new Player("Player2", 1500, 70);	// Create Player 2
 	var currentPlayer:Player;								// Current Player
-	var currentPlayerTextField: TextField = new TextField();// Textfield that shows current player
+	var currentPlayerTextField: TextField = new TextField();// Textfield that shows current player	
+	var scoreTextFormat:TextFormat = new TextFormat(Assets.getFont("fonts/MORPHEUS.TTF").fontName,35, 0xffffff, null, null, null, null, null, TextFormatAlign.CENTER); //Textformat to change the font,colour,etc.
+	
+	
 	
 	public function new () 
 	{
 		super ();
+		
+		var backGround : Bitmap = new Bitmap (Assets.getBitmapData("img/BackGround.jpg")); // gives startButton an image
+		addChild(backGround); 
 		
 		var startButton : Bitmap = new Bitmap (Assets.getBitmapData("img/StartButton.jpg")); // gives startButton an image
 		board.addChild(startButton); // adds startbutton to the board
 		addChild(board); 
 		
 		startButton.x = (stage.stageWidth - startButton.width) / 2;		// puts the startbutton in the middle of the game (width)
-		startButton.y = (stage.stageHeight - startButton.height) / 2;   // puts the startbutton in the middle of the game (height)
+		startButton.y = 750; 
+		
 
 		board.addEventListener(MouseEvent.CLICK, startGame); // adds an event to the startbutton	
 	}
@@ -50,24 +62,34 @@ class Main extends Sprite
 		setupPlayers();
 		createDeck();
 		shuffleDeck();
-		createField();		
+		createField();
+		
 	}  
 	  
-	function setupPlayers() 
+	function setupPlayers() 	
 	{
-		currentPlayer = player1; // starting player = player 1	
+		
+		currentPlayer = player1; // starting player = player 1		
 		
 		//Setup current player text field
-		showCurrentPlayer();
+		showCurrentPlayer();	
+		
 		currentPlayerTextField.x = 500;
 		currentPlayerTextField.y = 10;
-		currentPlayerTextField.scaleX = 3;
-		currentPlayerTextField.scaleY = 3;
+		currentPlayerTextField.scaleX = 1;
+		currentPlayerTextField.scaleY = 1;	
+		currentPlayerTextField.selectable = false; 	
+		currentPlayerTextField.autoSize = TextFieldAutoSize.LEFT;
+		currentPlayerTextField.defaultTextFormat = scoreTextFormat;
+		
+		
 		
 		//Add textfields
 		addChild(currentPlayerTextField);
 		addChild(player1.scoreTextField);
 		addChild(player2.scoreTextField);
+		
+		
 	}
   
 	//create an array with the cards of a deck of standard memory cards
@@ -98,6 +120,7 @@ class Main extends Sprite
 		board.removeChildren();
 		var xPos:Float = 0;
 		var n:Int = memoryCards.length;
+		trace(memoryCards.length);
 
 		for (i in 0...n)
 		{
@@ -134,7 +157,7 @@ class Main extends Sprite
 			else 
 			{
 				board.removeEventListener (MouseEvent.CLICK, clickedonCard); 
-				haxe.Timer.delay(compareCards.bind(clickedCards[0], clickedCards[1]), 500);		//1500??				
+				haxe.Timer.delay(compareCards.bind(clickedCards[0], clickedCards[1]), 500);		// have to change to 1500!!!			
 			}
 		}		
 	}
@@ -147,6 +170,10 @@ class Main extends Sprite
 		{			
 			board.removeChild(first);
 			board.removeChild(second);
+			memoryCards.remove(first);
+			memoryCards.remove(second);
+			trace(memoryCards.length);
+			
 			currentPlayer.addScore(5);
 		}
 		else
@@ -175,5 +202,31 @@ class Main extends Sprite
 	function showCurrentPlayer()
 	{
 		currentPlayerTextField.text = currentPlayer.name + "'s turn";
-	}  
+		
+	} 
+	function EndGame()
+	{
+		//TODO:when all cards are gone, look for which player has won and congratulate the player and show a restart + exit button
+		var endGameTextField: TextField = new TextField();
+		
+		if(memoryCards.length == 20)
+		
+		{			
+			endGameTextField.text = "Congratulations" + currentPlayer;
+			endGameTextField.x = 100;		
+			endGameTextField.y = 100;
+			endGameTextField.scaleX = 2;
+			endGameTextField.scaleY = 2;
+			endGameTextField.autoSize = TextFieldAutoSize.LEFT;
+			endGameTextField.defaultTextFormat = scoreTextFormat;
+			
+			addChild(endGameTextField);
+			trace(endGameTextField.text);
+		}		
+			
+			
+	}
+
+	
+	
 }
